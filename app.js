@@ -28,7 +28,7 @@ const setToday = () => {
 
 const ensureLogo = () => {
   if (!logoEl) return;
-  const expectedSrc = "assets/logo_trans.svg";
+  const expectedSrc = "./assets/logo_trans.svg";
   if (!logoEl.getAttribute("src")?.includes("logo_trans.svg")) {
     logoEl.setAttribute("src", expectedSrc);
   }

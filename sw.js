@@ -1,4 +1,4 @@
-const CACHE_NAME = "photo-consent-v9";
+const CACHE_NAME = "photo-consent-v10";
 const ASSETS = [
   "./",
   "index.html",
@@ -10,7 +10,7 @@ const ASSETS = [
   "photographer.json",
   "icons/icon-192.png",
   "icons/icon-512.png",
-  "assets/logo_trans.svg",
+  "./assets/logo_trans.svg",
 ];
 
 self.addEventListener("install", (event) => {
