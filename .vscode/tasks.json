@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Serve PWA (Node)",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"http-server",
+				".",
+				"-p",
+				"5173",
+				"-c-1"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Serve PWA (Node) 5174",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"http-server",
+				".",
+				"-p",
+				"5174",
+				"-c-1"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

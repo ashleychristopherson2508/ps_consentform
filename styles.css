@@ -1,0 +1,289 @@
+:root {
+  color-scheme: dark;
+  --bg: #050505;
+  --card: #121212;
+  --text: #f8fafc;
+  --muted: #cbd5f5;
+  --border: rgba(148, 163, 184, 0.2);
+  --primary: #f8fafc;
+  --accent: #f4b860;
+  --accent-soft: rgba(244, 184, 96, 0.12);
+  --radius: 16px;
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+}
+
+.site-header {
+  background: #000000;
+  color: #f8fafc;
+  padding: 28px 0 20px;
+}
+
+.header-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: rgba(248, 250, 252, 0.8);
+  margin-bottom: 8px;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.5));
+}
+
+main {
+  padding: 20px 0 24px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.card.highlight {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.grid.two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+input,
+select,
+textarea {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font: inherit;
+  background: #0b0b0b;
+  color: var(--text);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.3);
+  border-color: var(--accent);
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.button.primary {
+  background: var(--accent);
+  color: #1b1b1b;
+  box-shadow: 0 10px 20px rgba(244, 184, 96, 0.3);
+}
+
+.button.primary:disabled,
+.button.primary[aria-disabled="true"] {
+  background: #3f3f3f;
+  color: #9ca3af;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.85;
+}
+
+.button.ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.button.secondary {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #f8fafc;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.status {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #1f1f1f;
+  color: var(--text);
+  font-weight: 500;
+  display: none;
+}
+
+.status.visible {
+  display: block;
+}
+
+.site-footer {
+  padding: 28px 0 48px;
+  text-align: center;
+  color: var(--muted);
+}
+
+@media (max-height: 820px) {
+  body {
+    font-size: 15px;
+  }
+
+  .site-header {
+    padding: 20px 0 14px;
+  }
+
+  .logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  main {
+    padding: 16px 0 16px;
+  }
+
+  .card {
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+
+  .grid.two {
+    gap: 12px;
+  }
+
+  .site-footer {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    padding: 36px 0 24px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

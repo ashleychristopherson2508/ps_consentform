@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Photographer setup for consent storage." />
+    <title>Pineapple Studios Consent Form - Setup</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-content">
+        <div class="brand">
+          <img id="brand-logo" class="logo" src="/assets/logo_trans.svg" alt="Pineapple Studios logo" />
+          <div>
+            <p class="eyebrow">Pineapple Studios</p>
+            <h1>Consent Form Setup</h1>
+            <p class="muted">
+              Select where consent forms should be saved. You can change this later.
+            </p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h2>Save location</h2>
+        <p class="muted">
+          Choose a folder. A consent forms subfolder and a dated folder will be created.
+        </p>
+        <div class="form-actions">
+          <div class="form-row">
+            <button id="pick-folder" class="button secondary" type="button">
+              Choose save folder
+            </button>
+            <p id="folder-status" class="muted">No save folder selected.</p>
+          </div>
+          <a id="continue-link" class="button primary" href="index.html">Continue to consent form</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2026 Pineapple Studios</p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

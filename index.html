@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Pineapple Studios Consent Form" />
+    <title>Pineapple Studios Consent Form</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-content">
+        <div class="brand">
+          <img id="brand-logo" class="logo" src="/assets/logo_trans.svg" alt="Pineapple Studios logo" />
+          <div>
+            <p class="eyebrow">Pineapple Studios</p>
+            <h1>Consent Form</h1>
+            <p class="muted">
+              Please read the Terms and Conditions before completing this form prior to your photo session.
+            </p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a class="button ghost" href="terms.html">Terms & Conditions</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h2>Participant Details</h2>
+        <form id="consent-form" novalidate>
+          <div class="grid two">
+            <label>
+              Full name
+              <input name="fullName" type="text" required placeholder="Jane Doe" />
+            </label>
+            <label>
+              Email address
+              <input name="email" type="email" required placeholder="jane@email.com" />
+            </label>
+            <label>
+              Phone number
+              <input name="phone" type="tel" required placeholder="+44 7xxx xxx xxx" />
+            </label>
+            <label>
+              Session date
+              <input name="sessionDate" type="date" required />
+            </label>
+          </div>
+
+          <label>
+            Any restrictions or notes
+            <textarea
+              name="notes"
+              rows="4"
+              placeholder="List any restrictions, people who cannot be shown, or other notes."
+            ></textarea>
+          </label>
+
+          <div class="divider"></div>
+
+          <label class="checkbox">
+            <input name="acceptTerms" type="checkbox" required />
+            I have read and agree to the terms and conditions.
+          </label>
+
+          <label>
+            Signature (type full name)
+            <input name="signature" type="text" required placeholder="Jane Doe" />
+          </label>
+
+          <div class="form-actions">
+            <button id="submit-consent" class="button primary" type="submit">Submit consent</button>
+          </div>
+        </form>
+
+        <div id="status" class="status" aria-live="polite"></div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2026 Pineapple Studios</p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
