@@ -155,6 +155,10 @@ const consentSections = (data) => {
       ["Delivery of photographs to the Client (mandatory)", true],
       ["Use in Photographer offline portfolio", data.usagePortfolio || false],
       ["Use on Photographer website or social media", data.usageWeb || false],
+      [
+        "Permission for Pineapple Studios to tag the Client on Instagram",
+        data.usageInstagramTag || false,
+      ],
       ["Sharing with third‑party publishers (e.g., magazines)", data.usagePublishers || false],
     ],
     paragraphs: ["Permitted social media sites and usernames (if applicable):"],
@@ -504,12 +508,33 @@ const syncSignature = () => {
   });
 };
 
+const isFormReady = () => {
+  if (!form) return false;
+  const fullName = form.querySelector("input[name='fullName']")?.value ?? "";
+  const phone = form.querySelector("input[name='phone']")?.value ?? "";
+  const sessionDate = form.querySelector("input[name='sessionDate']")?.value ?? "";
+  const acceptTerms = form.querySelector("input[name='acceptTerms']")?.checked ?? false;
+  const usageInstagramTag =
+    form.querySelector("input[name='usageInstagramTag']")?.checked ?? false;
+  const instagram = form.querySelector("input[name='instagram']")?.value ?? "";
+
+  if (!hasText(fullName) || !hasText(phone) || !hasText(sessionDate)) {
+    return false;
+  }
+  if (!acceptTerms) {
+    return false;
+  }
+  if (usageInstagramTag && !hasText(instagram)) {
+    return false;
+  }
+  return true;
+};
+
 const toggleSubmitButton = () => {
   if (!form || !submitButton) return;
-  const acceptTerms = form.querySelector("input[name='acceptTerms']");
-  const isChecked = acceptTerms?.checked ?? false;
-  submitButton.disabled = !isChecked;
-  submitButton.setAttribute("aria-disabled", String(!isChecked));
+  const isReady = isFormReady();
+  submitButton.disabled = !isReady;
+  submitButton.setAttribute("aria-disabled", String(!isReady));
 };
 
 const collectFormData = (formElement) => {
@@ -518,12 +543,16 @@ const collectFormData = (formElement) => {
     ...data,
     acceptTerms: formElement.acceptTerms?.checked ?? false,
     usageWeb: formElement.usageWeb?.checked ?? false,
+    usageInstagramTag: formElement.usageInstagramTag?.checked ?? false,
   };
 };
 
 const validate = (data) => {
   if (!data.fullName || !data.phone || !data.sessionDate) {
     return "Please complete all required fields.";
+  }
+  if (data.usageInstagramTag && !hasText(data.instagram)) {
+    return "Please provide an Instagram username if you grant Instagram tagging permission.";
   }
   if (!data.acceptTerms) {
     return "Please confirm you agree to the terms and conditions.";
@@ -579,8 +608,10 @@ pickFolderButton?.addEventListener("click", async () => {
   updateContinueLink();
 });
 
-form?.addEventListener("change", (event) => {
-  if (event.target?.name === "acceptTerms") {
-    toggleSubmitButton();
-  }
+form?.addEventListener("change", () => {
+  toggleSubmitButton();
+});
+
+form?.addEventListener("input", () => {
+  toggleSubmitButton();
 });

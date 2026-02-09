@@ -1,4 +1,4 @@
-const CACHE_NAME = "photo-consent-v11";
+const CACHE_NAME = "photo-consent-v12";
 const ASSETS = [
   "./",
   "index.html",
