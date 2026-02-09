@@ -103,7 +103,29 @@ const verifyPermission = async (handle) => {
 const todayFolderName = () => new Date().toISOString().slice(0, 10);
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
-const consentSections = (data) => [
+const hasText = (value) => (typeof value === "string" ? value.trim().length > 0 : Boolean(value));
+
+const consentSections = (data) => {
+  const socialMediaEntries = [
+    ["Fabswinger.com", data.fabswinger],
+    ["SpicyMatch", data.spicymatch],
+    ["Instagram", data.instagram],
+  ]
+    .filter(([, value]) => hasText(value))
+    .map(([label, value]) => `${label}: ${String(value).trim()}`);
+
+  const consentAgreementParagraphs = [
+    "The Client hereby grants the Photographer permission to create and deliver photographs as part of the agreed session. The Client confirms that they provide explicit, informed consent under UK GDPR for the processing of their personal data solely for the purposes of conducting the session and delivering the photographs.",
+  ];
+
+  if (hasText(data.notes)) {
+    consentAgreementParagraphs.push(`Client restrictions or notes: ${String(data.notes).trim()}`);
+    consentAgreementParagraphs.push(
+      "The Photographer acknowledges and agrees to follow the above restrictions or notes.",
+    );
+  }
+
+  return [
   {
     title: "A. Client Information",
     rows: [
@@ -120,13 +142,12 @@ const consentSections = (data) => [
       ["Business / Trading Name", data.businessName || ""],
       ["Email", data.photographerEmail || ""],
       ["Telephone", data.photographerPhone || ""],
+      ["Instagram", data.photograpgerInstagram || ""],
     ],
   },
   {
     title: "C. Consent Agreement",
-    paragraphs: [
-      "The Client hereby grants the Photographer permission to create and deliver photographs as part of the agreed session. The Client confirms that they provide explicit, informed consent under UK GDPR for the processing of their personal data solely for the purposes of conducting the session and delivering the photographs.",
-    ],
+    paragraphs: consentAgreementParagraphs,
   },
   {
     title: "D. Permitted Uses of Photographs",
@@ -136,6 +157,8 @@ const consentSections = (data) => [
       ["Use on Photographer website or social media", data.usageWeb || false],
       ["Sharing with third‑party publishers (e.g., magazines)", data.usagePublishers || false],
     ],
+    paragraphs: ["Permitted social media sites and usernames (if applicable):"],
+    bullets: socialMediaEntries,
   },
   {
     title: "E. Data Protection Notice (UK GDPR)",
@@ -163,7 +186,8 @@ const consentSections = (data) => [
       ["Photographer Date", data.sessionDate || ""],
     ],
   },
-];
+  ];
+};
 
 const sanitizeText = (text) =>
   text
@@ -201,6 +225,7 @@ const wrapText = (text, font, fontSize, maxWidth) => {
   if (current) lines.push(current);
   return lines;
 };
+
 
 const buildConsentPdf = async (data) => {
   if (!window.PDFLib) {
@@ -256,12 +281,17 @@ const buildConsentPdf = async (data) => {
   cursorY -= 4;
 
   const photographerDetails = await fetchPhotographerDetails();
+  const hasSocialHandle = [data.fabswinger, data.spicymatch, data.instagram].some(hasText);
   const mergedData = {
     ...data,
     photographerName: data.photographerName || photographerDetails.photographerName || "",
     businessName: data.businessName || photographerDetails.businessName || "",
     photographerEmail: data.photographerEmail || photographerDetails.email || "",
     photographerPhone: data.photographerPhone || photographerDetails.telephone || "",
+    photograpgerInstagram: data.photographerInstagram || photographerDetails.Instagram || "",
+    usageWeb: hasText(data.usageWeb) || hasSocialHandle,
+    usagePortfolio: hasText(data.usagePortfolio),
+    usagePublishers: hasText(data.usagePublishers),
   };
 
   const sections = consentSections(mergedData);
@@ -295,24 +325,6 @@ const buildConsentPdf = async (data) => {
       cursorY -= 6;
     }
 
-    if (section.paragraphs) {
-      for (const paragraph of section.paragraphs) {
-        const lines = wrapText(sanitizeText(paragraph), font, 10, contentWidth);
-        for (const line of lines) {
-          ensureSpace(14);
-          page.drawText(line, {
-            x: margin,
-            y: cursorY,
-            size: 10,
-            font,
-            color: rgb(0, 0, 0),
-          });
-          cursorY -= 12;
-        }
-        cursorY -= 6;
-      }
-    }
-
     if (section.checkboxes) {
       for (const [label, checked] of section.checkboxes) {
         const box = checked ? "[x]" : "[ ]";
@@ -330,6 +342,24 @@ const buildConsentPdf = async (data) => {
         }
       }
       cursorY -= 6;
+    }
+
+    if (section.paragraphs) {
+      for (const paragraph of section.paragraphs) {
+        const lines = wrapText(sanitizeText(paragraph), font, 10, contentWidth);
+        for (const line of lines) {
+          ensureSpace(14);
+          page.drawText(line, {
+            x: margin,
+            y: cursorY,
+            size: 10,
+            font,
+            color: rgb(0, 0, 0),
+          });
+          cursorY -= 12;
+        }
+        cursorY -= 6;
+      }
     }
 
     if (section.bullets) {
