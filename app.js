@@ -522,7 +522,7 @@ const collectFormData = (formElement) => {
 };
 
 const validate = (data) => {
-  if (!data.fullName || !data.email || !data.phone || !data.sessionDate) {
+  if (!data.fullName || !data.phone || !data.sessionDate) {
     return "Please complete all required fields.";
   }
   if (!data.acceptTerms) {
