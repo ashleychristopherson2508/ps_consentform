@@ -517,6 +517,7 @@ const collectFormData = (formElement) => {
   return {
     ...data,
     acceptTerms: formElement.acceptTerms?.checked ?? false,
+    usageWeb: formElement.usageWeb?.checked ?? false,
   };
 };
 
