@@ -1,7 +1,8 @@
 {
   "name": "Pineapple Studios Consent Form",
   "short_name": "Consent",
-  "start_url": "/startup.html",
+  "start_url": "./startup.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

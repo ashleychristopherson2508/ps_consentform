@@ -1,15 +1,16 @@
-const CACHE_NAME = "photo-consent-v8";
+const CACHE_NAME = "photo-consent-v9";
 const ASSETS = [
-  "/",
-  "/index.html",
-  "/startup.html",
-  "/terms.html",
-  "/styles.css",
-  "/app.js",
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/assets/logo_trans.svg",
+  "./",
+  "index.html",
+  "startup.html",
+  "terms.html",
+  "styles.css",
+  "app.js",
+  "manifest.json",
+  "photographer.json",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
+  "assets/logo_trans.svg",
 ];
 
 self.addEventListener("install", (event) => {

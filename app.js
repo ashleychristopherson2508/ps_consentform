@@ -10,8 +10,8 @@ const CONSENT_HANDLE_KEY = "consent-directory";
 const CONSENT_FOLDER_NAME = "consent forms";
 const DB_NAME = "consent-pwa";
 const STORE_NAME = "handles";
-const LOGO_PNG = "/assets/logo_trans.png";
-const PHOTOGRAPHER_URL = "/photographer.json";
+const LOGO_PNG = "assets/logo_trans.png";
+const PHOTOGRAPHER_URL = "photographer.json";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -28,7 +28,7 @@ const setToday = () => {
 
 const ensureLogo = () => {
   if (!logoEl) return;
-  const expectedSrc = "/assets/logo_trans.svg";
+  const expectedSrc = "assets/logo_trans.svg";
   if (!logoEl.getAttribute("src")?.includes("logo_trans.svg")) {
     logoEl.setAttribute("src", expectedSrc);
   }
