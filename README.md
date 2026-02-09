@@ -1,23 +1,30 @@
-# Photographer Consent PWA
+# Pineapple Studios Consent Form
 
-Starting point for a photographer consent form PWA with a terms & conditions page.
+## Install the PWA
+1. Open the hosted site in Edge or Chrome (https://ashleychristopherson2508.github.io/ps_consentform/). 
+2. Click the install icon in the address bar (or Menu → Install this site as an app).
+3. Launch the app from the desktop/start menu.
 
-## What is included
-- Consent form page
-- Terms & conditions template page
-- PWA manifest and service worker for offline caching
-- Black background theme
+## First-time setup (photographer)
+1. Open the app.
+2. On the Setup screen, click “Choose save folder.”
+3. Select a parent folder where consent forms should be stored (such as the Desktop or Documents Folder).
+	- The app will create a “consent forms” folder and a dated subfolder inside it.
 
-## Run locally
-Open [index.html](index.html) in a local web server so the service worker can register. This project does not require a build step.
+## User guide (during a session)
+1. Enter participant details (name, email, phone, session date).
+2. Read the terms and conditions.
+3. Tick the consent checkbox.
+4. Type the signature.
+5. Click “Submit consent.”
+	- A PDF consent form is saved into the dated folder.
 
-### Node option
-Run a simple local server with Node:
+## Notes
+- The app works offline once installed.
+- If saving fails, return to Setup and reselect the save folder.
+- Photographer details are loaded from photographer.json.
+
+## Local development
+Run a local server (required for service worker):
 - `npx http-server . -p 5173 -c-1`
 Then open http://localhost:5173
-
-## Next steps
-- Replace the template terms with your official policy
-- Decide how submissions should be stored (email, API, CRM)
-- Update branding and copy
-- Drop your logo at assets/logo_trans.png
