@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Photographer distribution view for consent sessions." />
+    <title>Pineapple Studios Consent Form - Distribution</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-content">
+        <div class="brand">
+          <a href="distribution.html" aria-label="Open distribution page">
+            <img id="brand-logo" class="logo" src="./assets/logo_trans.svg" alt="Pineapple Studios logo" />
+          </a>
+          <div>
+            <p class="eyebrow">Pineapple Studios</p>
+            <h1>Distribution</h1>
+            <p class="muted">Select a session and browse consent details from saved PDF files.</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a class="button ghost" href="startup.html">Setup</a>
+          <a class="button ghost" href="index.html">Consent form</a>
+          <button id="close-session" class="button ghost" type="button">Close session</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h2>Session selector</h2>
+        <label>
+          Choose session
+          <select id="session-select"></select>
+        </label>
+        <p id="distribution-counter" class="muted">0 of 0</p>
+        <div class="form-row">
+          <button id="distribution-prev" class="button secondary" type="button">Previous</button>
+          <button id="distribution-next" class="button secondary" type="button">Next</button>
+        </div>
+        <div id="distribution-content" class="distribution-content"></div>
+        <div id="distribution-status" class="status" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2026 Pineapple Studios</p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="app.js?v=20260223"></script>
+  </body>
+</html>

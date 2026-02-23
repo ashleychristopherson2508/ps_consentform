@@ -3,7 +3,7 @@
   "short_name": "Consent",
   "start_url": "./startup.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [

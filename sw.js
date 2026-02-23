@@ -1,11 +1,13 @@
-const CACHE_NAME = "photo-consent-v15";
+const CACHE_NAME = "photo-consent-v19";
 const ASSETS = [
   "./",
   "index.html",
   "startup.html",
+  "distribution.html",
   "terms.html",
   "styles.css",
   "app.js",
+  "app.js?v=20260223",
   "manifest.json",
   "photographer.json",
   "icons/icon-192.png",
@@ -32,7 +34,45 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET") {
+    return;
+  }
+
+  const url = new URL(request.url);
+  const isHtmlRequest =
+    request.mode === "navigate" ||
+    request.destination === "document" ||
+    url.pathname.endsWith(".html") ||
+    url.pathname === "/";
+  const isAppScript = url.pathname.endsWith("/app.js") || url.pathname.endsWith("app.js");
+
+  if (isHtmlRequest || isAppScript) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, cloned);
+          });
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("./"))),
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request)),
+    caches.match(request).then(
+      (cached) =>
+        cached ||
+        fetch(request).then((response) => {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, cloned);
+          });
+          return response;
+        }),
+    ),
   );
 });

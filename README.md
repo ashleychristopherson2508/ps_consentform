@@ -12,12 +12,26 @@
 	- The app will create a “consent forms” folder and a dated subfolder inside it.
 
 ## User guide (during a session)
-1. Enter participant details (name, email, phone, session date).
-2. Read the terms and conditions.
-3. Tick the consent checkbox.
-4. Type the signature.
-5. Click “Submit consent.”
+1. If the app launches offline, choose whether to start a new session or continue the most recent session log.
+2. Enter participant details (name and phone).
+3. Read the terms and conditions.
+4. Tick the consent checkbox.
+5. Type the signature.
+6. Click “Submit consent.”
 	- A PDF consent form is saved into the dated folder.
+	- The active session log file is updated in the `consent forms` folder.
+
+## Session logs
+- Session logs are stored as `session-log-<unique-id>.json` in the `consent forms` folder.
+- Each log tracks only non-personal session metadata with user-friendly fields (for example `sessionName`, `sessionDate`, `totalConsents`, `totalSignedTerms`).
+- If you continue an existing session, the app appends to the most recent session log.
+- When closing the PWA, the app prompts for confirmation before closing the active session.
+
+## Distribution page (photographer)
+- Open **Distribution** from Setup.
+- Select the required session log from the dropdown.
+- The app opens the matching dated folder, reads consent details from PDF files, and displays one record at a time.
+- Use **Previous** and **Next** buttons to navigate records; the counter shows position (for example `1 of 100`).
 
 ## Notes
 - The app works offline once installed.

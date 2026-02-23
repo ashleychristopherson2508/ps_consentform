@@ -13,7 +13,9 @@
     <header class="site-header">
       <div class="container header-content">
         <div class="brand">
-          <img id="brand-logo" class="logo" src="./assets/logo_trans.svg" alt="Pineapple Studios logo" />
+          <a href="distribution.html" aria-label="Open distribution page">
+            <img id="brand-logo" class="logo" src="./assets/logo_trans.svg" alt="Pineapple Studios logo" />
+          </a>
           <div>
             <p class="eyebrow">Pineapple Studios</p>
             <h1>Consent Form</h1>
@@ -38,18 +40,12 @@
               <input name="fullName" type="text" required placeholder="Required" />
             </label>
             <label>
-              Email address
-              <input name="email" type="email" placeholder="Not required" />
-            </label>
-            <label>
               Phone number
               <input name="phone" type="tel" required placeholder="07xxx xxx xxx (Required)" />
             </label>
-            <label>
-              Session date
-              <input name="sessionDate" type="date" required />
-            </label>
           </div>
+
+          <input name="sessionDate" type="hidden" required />
 
           <div class="grid two">
             <label>
@@ -112,6 +108,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=20260223"></script>
   </body>
 </html>

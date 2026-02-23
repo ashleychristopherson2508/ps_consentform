@@ -5,9 +5,21 @@ const pickFolderButton = document.getElementById("pick-folder");
 const folderStatusEl = document.getElementById("folder-status");
 const continueLink = document.getElementById("continue-link");
 const submitButton = document.getElementById("submit-consent");
+const closeSessionButton = document.getElementById("close-session");
+const sessionSelectEl = document.getElementById("session-select");
+const distributionStatusEl = document.getElementById("distribution-status");
+const distributionCounterEl = document.getElementById("distribution-counter");
+const distributionContentEl = document.getElementById("distribution-content");
+const distributionPrevEl = document.getElementById("distribution-prev");
+const distributionNextEl = document.getElementById("distribution-next");
 
 const CONSENT_HANDLE_KEY = "consent-directory";
 const CONSENT_FOLDER_NAME = "consent forms";
+const SESSION_LOG_HANDLE_KEY = "active-session-log";
+const SESSION_LOG_PREFIX = "session-log-";
+const SESSION_LOG_SUFFIX = ".json";
+const SESSION_ACTIVE_KEY = "session-active";
+const OFFLINE_PROMPTED_KEY = "offline-session-choice-made";
 const DB_NAME = "consent-pwa";
 const STORE_NAME = "handles";
 const LOGO_PNG = "assets/logo_trans.png";
@@ -22,7 +34,11 @@ if ("serviceWorker" in navigator) {
 const setToday = () => {
   const dateInput = form?.querySelector("input[name='sessionDate']");
   if (dateInput && !dateInput.value) {
-    dateInput.valueAsDate = new Date();
+    if (dateInput.type === "date") {
+      dateInput.valueAsDate = new Date();
+      return;
+    }
+    dateInput.value = todayFolderName();
   }
 };
 
@@ -32,6 +48,10 @@ const ensureLogo = () => {
   if (!logoEl.getAttribute("src")?.includes("logo_trans.svg")) {
     logoEl.setAttribute("src", expectedSrc);
   }
+  logoEl.style.cursor = "pointer";
+  logoEl.addEventListener("click", () => {
+    window.location.href = "distribution.html";
+  });
   logoEl.addEventListener("error", () => {
     logoEl.setAttribute("src", expectedSrc);
   });
@@ -103,7 +123,554 @@ const verifyPermission = async (handle) => {
 const todayFolderName = () => new Date().toISOString().slice(0, 10);
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
+const formatSessionStamp = (date = new Date()) => {
+  const year = String(date.getFullYear());
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+};
+
+const formatSessionClock = (date = new Date()) => {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+
+const buildSessionId = () => `${formatSessionStamp()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const makeSessionFilename = (sessionId) => `${SESSION_LOG_PREFIX}${sessionId}${SESSION_LOG_SUFFIX}`;
+
+const isSessionLogFile = (filename) =>
+  filename?.startsWith(SESSION_LOG_PREFIX) && filename?.endsWith(SESSION_LOG_SUFFIX);
+
+const isConsentPage = () =>
+  window.location.pathname.endsWith("index.html") || window.location.pathname === "/";
+
+const isDistributionPage = () => window.location.pathname.endsWith("distribution.html");
+
+const showSessionStatus = (message, isError = false) => {
+  if (statusEl) {
+    showStatus(message, isError);
+    return;
+  }
+  if (distributionStatusEl) {
+    distributionStatusEl.textContent = message;
+    distributionStatusEl.classList.add("visible");
+    distributionStatusEl.style.background = isError ? "#fee2e2" : "#dcfce7";
+    distributionStatusEl.style.color = isError ? "#991b1b" : "#166534";
+    return;
+  }
+  setFolderStatus(message, isError);
+};
+
 const hasText = (value) => (typeof value === "string" ? value.trim().length > 0 : Boolean(value));
+
+const createSessionLogTemplate = (sessionId) => {
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+  const sessionDate = formatDate(nowDate);
+  return {
+    schemaVersion: 2,
+    sessionId,
+    sessionName: `Session ${sessionDate} ${formatSessionClock(nowDate)}`,
+    sessionDate,
+    startedAt: now,
+    createdAt: now,
+    updatedAt: now,
+    closedAt: null,
+    totalConsents: 0,
+    totalSignedTerms: 0,
+  };
+};
+
+const getSessionSignedCount = (logData) =>
+  Number(logData?.totalSignedTerms ?? logData?.totalConsents ?? 0);
+
+const isSessionClosed = (logData) => hasText(logData?.closedAt);
+
+const readJsonFromFile = async (fileHandle) => {
+  const file = await fileHandle.getFile();
+  const text = await file.text();
+  if (!text.trim()) {
+    return null;
+  }
+  return JSON.parse(text);
+};
+
+const writeJsonToFile = async (fileHandle, data) => {
+  const writable = await fileHandle.createWritable();
+  await writable.write(JSON.stringify(data, null, 2));
+  await writable.close();
+};
+
+const markSessionActive = (isActive) => {
+  localStorage.setItem(SESSION_ACTIVE_KEY, isActive ? "true" : "false");
+};
+
+const isSessionActive = () => localStorage.getItem(SESSION_ACTIVE_KEY) === "true";
+
+const createNewSessionLog = async (consentHandle) => {
+  const sessionId = buildSessionId();
+  const filename = makeSessionFilename(sessionId);
+  const fileHandle = await consentHandle.getFileHandle(filename, { create: true });
+  const payload = createSessionLogTemplate(sessionId);
+  await writeJsonToFile(fileHandle, payload);
+  await setHandle(SESSION_LOG_HANDLE_KEY, fileHandle);
+  markSessionActive(true);
+  return { fileHandle, filename };
+};
+
+const getMostRecentSessionLog = async (consentHandle) => {
+  const entries = [];
+  for await (const [name, handle] of consentHandle.entries()) {
+    if (handle.kind !== "file" || !isSessionLogFile(name)) {
+      continue;
+    }
+    try {
+      const file = await handle.getFile();
+      entries.push({
+        name,
+        handle,
+        lastModified: file.lastModified,
+      });
+    } catch (error) {
+      // ignore inaccessible entries
+    }
+  }
+
+  if (!entries.length) {
+    return null;
+  }
+
+  entries.sort((a, b) => b.lastModified - a.lastModified);
+  return entries[0];
+};
+
+const ensureSessionLogForLaunch = async (consentHandle) => {
+  if (!consentHandle || !isConsentPage()) {
+    return null;
+  }
+
+  const alreadyPrompted = sessionStorage.getItem(OFFLINE_PROMPTED_KEY) === "true";
+  const launchedOffline = !navigator.onLine;
+
+  if (launchedOffline && !alreadyPrompted) {
+    const startNew = window.confirm(
+      "You are offline. Start a new session now? Select Cancel to continue the most recent open session.",
+    );
+    sessionStorage.setItem(OFFLINE_PROMPTED_KEY, "true");
+
+    if (startNew) {
+      const created = await createNewSessionLog(consentHandle);
+      showSessionStatus(`Started new session log: ${created.filename}`);
+      return created.fileHandle;
+    }
+
+    const mostRecent = await getMostRecentSessionLog(consentHandle);
+    if (mostRecent?.handle) {
+      await setHandle(SESSION_LOG_HANDLE_KEY, mostRecent.handle);
+      markSessionActive(true);
+      showSessionStatus(`Continuing session log: ${mostRecent.name}`);
+      return mostRecent.handle;
+    }
+
+    const fallback = await createNewSessionLog(consentHandle);
+    showSessionStatus(`No prior session found. Started new session log: ${fallback.filename}`);
+    return fallback.fileHandle;
+  }
+
+  const storedHandle = await getHandle(SESSION_LOG_HANDLE_KEY);
+  if (storedHandle) {
+    try {
+      const hasPermission = await verifyPermission(storedHandle);
+      if (hasPermission) {
+        const storedLog = await readJsonFromFile(storedHandle);
+        if (isSessionClosed(storedLog)) {
+          const created = await createNewSessionLog(consentHandle);
+          showSessionStatus(`Started new session log: ${created.filename}`);
+          return created.fileHandle;
+        }
+        markSessionActive(true);
+        return storedHandle;
+      }
+    } catch (error) {
+      // fall through to lookup by directory
+    }
+  }
+
+  const mostRecent = await getMostRecentSessionLog(consentHandle);
+  if (mostRecent?.handle) {
+    try {
+      const recentLog = await readJsonFromFile(mostRecent.handle);
+      if (!isSessionClosed(recentLog)) {
+        await setHandle(SESSION_LOG_HANDLE_KEY, mostRecent.handle);
+        markSessionActive(true);
+        return mostRecent.handle;
+      }
+    } catch (error) {
+      // fall through to create a new session
+    }
+  }
+
+  const created = await createNewSessionLog(consentHandle);
+  showSessionStatus(`Started new session log: ${created.filename}`);
+  return created.fileHandle;
+};
+
+const updateSessionLogAfterConsent = async (consentHandle) => {
+  const sessionHandle = await ensureSessionLogForLaunch(consentHandle);
+  if (!sessionHandle) {
+    throw new Error("No active session log is available.");
+  }
+
+  const existing = (await readJsonFromFile(sessionHandle)) || createSessionLogTemplate(buildSessionId());
+  const updated = {
+    ...existing,
+    totalSignedTerms: getSessionSignedCount(existing) + 1,
+    totalConsents: getSessionSignedCount(existing) + 1,
+    updatedAt: new Date().toISOString(),
+    closedAt: null,
+  };
+
+  await writeJsonToFile(sessionHandle, updated);
+  const sessionFile = await sessionHandle.getFile();
+  return {
+    totalSignedTerms: getSessionSignedCount(updated),
+    filename: sessionFile.name,
+  };
+};
+
+const promptToCloseSessionOnExit = (event) => {
+  if (!isSessionActive()) {
+    return;
+  }
+  event.preventDefault();
+  event.returnValue = "Do you want to close the current session before exiting?";
+};
+
+const closeCurrentSession = async () => {
+  const consentHandle = await initConsentFolder();
+  if (!consentHandle) {
+    showSessionStatus("Cannot close session: save folder unavailable.", true);
+    return;
+  }
+
+  let sessionHandle = await getHandle(SESSION_LOG_HANDLE_KEY);
+  if (!sessionHandle) {
+    const mostRecent = await getMostRecentSessionLog(consentHandle);
+    sessionHandle = mostRecent?.handle || null;
+  }
+
+  if (!sessionHandle) {
+    showSessionStatus("No active session found.", true);
+    return;
+  }
+
+  const hasPermission = await verifyPermission(sessionHandle);
+  if (!hasPermission) {
+    showSessionStatus("Cannot close session: permission denied.", true);
+    return;
+  }
+
+  const existing = (await readJsonFromFile(sessionHandle)) || createSessionLogTemplate(buildSessionId());
+  const now = new Date().toISOString();
+  const updated = {
+    ...existing,
+    updatedAt: now,
+    closedAt: now,
+  };
+
+  await writeJsonToFile(sessionHandle, updated);
+  markSessionActive(false);
+  showSessionStatus("Session closed.");
+};
+
+const distributionState = {
+  sessionMap: new Map(),
+  entries: [],
+  currentIndex: 0,
+};
+
+const setDistributionStatus = (message, isError = false) => {
+  if (!distributionStatusEl) return;
+  distributionStatusEl.textContent = message;
+  distributionStatusEl.classList.add("visible");
+  distributionStatusEl.style.background = isError ? "#fee2e2" : "#dcfce7";
+  distributionStatusEl.style.color = isError ? "#991b1b" : "#166534";
+};
+
+const updateDistributionCounter = () => {
+  if (!distributionCounterEl) return;
+  const total = distributionState.entries.length;
+  const current = total ? distributionState.currentIndex + 1 : 0;
+  distributionCounterEl.textContent = `${current} of ${total}`;
+
+  if (distributionPrevEl) {
+    distributionPrevEl.disabled = total === 0 || distributionState.currentIndex <= 0;
+    distributionPrevEl.setAttribute("aria-disabled", String(distributionPrevEl.disabled));
+  }
+  if (distributionNextEl) {
+    distributionNextEl.disabled = total === 0 || distributionState.currentIndex >= total - 1;
+    distributionNextEl.setAttribute("aria-disabled", String(distributionNextEl.disabled));
+  }
+};
+
+const renderDistributionEntry = () => {
+  if (!distributionContentEl) return;
+  const entry = distributionState.entries[distributionState.currentIndex];
+  if (!entry) {
+    distributionContentEl.innerHTML = '<p class="muted">No consent PDFs found for this session.</p>';
+    updateDistributionCounter();
+    return;
+  }
+
+  distributionContentEl.innerHTML = `
+    <div class="distribution-grid">
+      <p><strong>File:</strong> ${entry.filename}</p>
+      <p><strong>Full Name:</strong> ${entry.fullName || "Not found"}</p>
+      <p><strong>Phone:</strong> ${entry.phone || "Not found"}</p>
+      <p><strong>Session Date:</strong> ${entry.sessionDate || "Not found"}</p>
+      <p><strong>Instagram:</strong> ${entry.instagram || "Not provided"}</p>
+      <p><strong>Fabswinger.com:</strong> ${entry.fabswinger || "Not provided"}</p>
+      <p><strong>SpicyMatch:</strong> ${entry.spicymatch || "Not provided"}</p>
+    </div>
+  `;
+  updateDistributionCounter();
+};
+
+const sessionDateFromLog = (sessionLog) => {
+  if (hasText(sessionLog?.sessionDate)) {
+    return String(sessionLog.sessionDate).slice(0, 10);
+  }
+
+  if (hasText(sessionLog?.startedAt)) {
+    const started = new Date(sessionLog.startedAt);
+    if (!Number.isNaN(started.getTime())) {
+      return formatDate(started);
+    }
+  }
+
+  if (hasText(sessionLog?.createdAt)) {
+    const date = new Date(sessionLog.createdAt);
+    if (!Number.isNaN(date.getTime())) {
+      return formatDate(date);
+    }
+  }
+
+  const sessionId = String(sessionLog?.sessionId || "");
+  const match = sessionId.match(/^(\d{4})(\d{2})(\d{2})-/);
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`;
+  }
+  return todayFolderName();
+};
+
+const getPdfText = async (fileHandle) => {
+  const pdfjs = window.pdfjsLib;
+  if (!pdfjs) {
+    throw new Error("PDF reader library is not available.");
+  }
+
+  if (pdfjs.GlobalWorkerOptions) {
+    pdfjs.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+
+  const file = await fileHandle.getFile();
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+  const pdf = await loadingTask.promise;
+  const chunks = [];
+
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item) => item.str)
+      .filter(Boolean)
+      .join("\n");
+    chunks.push(pageText);
+  }
+
+  return chunks.join("\n");
+};
+
+const findFieldValue = (text, label) => {
+  const match = text.match(new RegExp(`${label}\\s*:\\s*([^\\n\\r]+)`, "i"));
+  return match?.[1]?.trim() || "";
+};
+
+const findLastFieldValue = (text, label) => {
+  const matches = [...text.matchAll(new RegExp(`${label}\\s*:\\s*([^\\n\\r]+)`, "gi"))];
+  if (!matches.length) {
+    return "";
+  }
+  return matches[matches.length - 1]?.[1]?.trim() || "";
+};
+
+const parseDistributionEntryFromPdf = async (fileHandle) => {
+  const file = await fileHandle.getFile();
+  const text = await getPdfText(fileHandle);
+  return {
+    filename: file.name,
+    fullName: findFieldValue(text, "Full Name") || findFieldValue(text, "Client Name"),
+    phone: findFieldValue(text, "Telephone Number"),
+    sessionDate: findFieldValue(text, "Photo Session Date"),
+    instagram: findLastFieldValue(text, "Instagram"),
+    fabswinger: findLastFieldValue(text, "Fabswinger\\.com"),
+    spicymatch: findLastFieldValue(text, "SpicyMatch"),
+  };
+};
+
+const loadDistributionEntriesForSession = async (consentHandle, sessionKey) => {
+  const sessionMeta = distributionState.sessionMap.get(sessionKey);
+  if (!sessionMeta) {
+    distributionState.entries = [];
+    distributionState.currentIndex = 0;
+    renderDistributionEntry();
+    return;
+  }
+
+  const dateFolderName = sessionDateFromLog(sessionMeta.logData);
+  let dateFolderHandle;
+  try {
+    dateFolderHandle = await consentHandle.getDirectoryHandle(dateFolderName, { create: false });
+  } catch (error) {
+    distributionState.entries = [];
+    distributionState.currentIndex = 0;
+    renderDistributionEntry();
+    setDistributionStatus(`No date folder found for session (${dateFolderName}).`, true);
+    return;
+  }
+
+  const pdfHandles = [];
+  for await (const [name, handle] of dateFolderHandle.entries()) {
+    if (handle.kind === "file" && name.toLowerCase().endsWith(".pdf")) {
+      pdfHandles.push(handle);
+    }
+  }
+
+  if (!pdfHandles.length) {
+    distributionState.entries = [];
+    distributionState.currentIndex = 0;
+    renderDistributionEntry();
+    setDistributionStatus("No consent PDFs found for selected session.", true);
+    return;
+  }
+
+  const parsedEntries = [];
+  for (const fileHandle of pdfHandles) {
+    try {
+      const entry = await parseDistributionEntryFromPdf(fileHandle);
+      parsedEntries.push(entry);
+    } catch (error) {
+      // skip unreadable PDF files
+    }
+  }
+
+  distributionState.entries = parsedEntries;
+  distributionState.currentIndex = 0;
+  renderDistributionEntry();
+
+  const count = Number(sessionMeta.logData?.totalSignedTerms || parsedEntries.length);
+  setDistributionStatus(
+    `Loaded ${parsedEntries.length} PDF records for this session. Session counter: ${count}.`,
+  );
+};
+
+const populateDistributionSessions = async (consentHandle) => {
+  if (!sessionSelectEl) return;
+
+  distributionState.sessionMap = new Map();
+  sessionSelectEl.innerHTML = "";
+
+  const sessions = [];
+  for await (const [name, handle] of consentHandle.entries()) {
+    if (handle.kind !== "file" || !isSessionLogFile(name)) {
+      continue;
+    }
+
+    try {
+      const file = await handle.getFile();
+      const text = await file.text();
+      const logData = text.trim() ? JSON.parse(text) : {};
+      const signedCount = getSessionSignedCount(logData);
+      const sessionName = hasText(logData.sessionName) ? logData.sessionName : name;
+      const sessionDate = sessionDateFromLog(logData);
+      sessions.push({
+        key: name,
+        label: `${sessionName} - ${sessionDate} (signed: ${signedCount})`,
+        logData,
+        lastModified: file.lastModified,
+      });
+    } catch (error) {
+      // skip unreadable session files
+    }
+  }
+
+  sessions.sort((a, b) => b.lastModified - a.lastModified);
+
+  if (!sessions.length) {
+    const emptyOption = document.createElement("option");
+    emptyOption.value = "";
+    emptyOption.textContent = "No sessions available";
+    sessionSelectEl.appendChild(emptyOption);
+    distributionState.entries = [];
+    distributionState.currentIndex = 0;
+    renderDistributionEntry();
+    setDistributionStatus("No session logs found.", true);
+    return;
+  }
+
+  for (const session of sessions) {
+    distributionState.sessionMap.set(session.key, session);
+    const option = document.createElement("option");
+    option.value = session.key;
+    option.textContent = session.label;
+    sessionSelectEl.appendChild(option);
+  }
+
+  await loadDistributionEntriesForSession(consentHandle, sessions[0].key);
+};
+
+const initDistributionPage = async () => {
+  if (!isDistributionPage()) return;
+
+  if (!("showDirectoryPicker" in window)) {
+    setDistributionStatus("Distribution requires a supported browser.", true);
+    return;
+  }
+
+  const consentHandle = await initConsentFolder();
+  if (!consentHandle) {
+    window.location.href = "startup.html";
+    return;
+  }
+
+  await populateDistributionSessions(consentHandle);
+
+  sessionSelectEl?.addEventListener("change", async () => {
+    const selectedKey = sessionSelectEl.value;
+    await loadDistributionEntriesForSession(consentHandle, selectedKey);
+  });
+
+  distributionPrevEl?.addEventListener("click", () => {
+    if (distributionState.currentIndex > 0) {
+      distributionState.currentIndex -= 1;
+      renderDistributionEntry();
+    }
+  });
+
+  distributionNextEl?.addEventListener("click", () => {
+    if (distributionState.currentIndex < distributionState.entries.length - 1) {
+      distributionState.currentIndex += 1;
+      renderDistributionEntry();
+    }
+  });
+};
 
 const consentSections = (data) => {
   const socialMediaEntries = [
@@ -130,7 +697,6 @@ const consentSections = (data) => {
     title: "A. Client Information",
     rows: [
       ["Full Name", data.fullName],
-      ["Email Address", data.email],
       ["Telephone Number", data.phone],
       ["Photo Session Date", data.sessionDate],
     ],
@@ -500,12 +1066,16 @@ const syncSignature = () => {
   const signatureInput = form.querySelector("input[name='signature']");
   if (!nameInput || !signatureInput) return;
 
-  nameInput.addEventListener("input", () => {
+  const syncValue = () => {
     if (!signatureInput.value || signatureInput.value === nameInput.dataset.lastValue) {
       signatureInput.value = nameInput.value;
     }
     nameInput.dataset.lastValue = nameInput.value;
-  });
+  };
+
+  syncValue();
+  nameInput.addEventListener("input", syncValue);
+  nameInput.addEventListener("change", syncValue);
 };
 
 const isFormReady = () => {
@@ -539,8 +1109,18 @@ const toggleSubmitButton = () => {
 
 const collectFormData = (formElement) => {
   const data = Object.fromEntries(new FormData(formElement).entries());
+  const sessionDateInput = formElement.querySelector("input[name='sessionDate']");
+  const sessionDateValue = hasText(sessionDateInput?.value)
+    ? String(sessionDateInput.value)
+    : todayFolderName();
+
+  if (sessionDateInput && !hasText(sessionDateInput.value)) {
+    sessionDateInput.value = sessionDateValue;
+  }
+
   return {
     ...data,
+    sessionDate: sessionDateValue,
     acceptTerms: formElement.acceptTerms?.checked ?? false,
     usageWeb: formElement.usageWeb?.checked ?? false,
     usageInstagramTag: formElement.usageInstagramTag?.checked ?? false,
@@ -573,7 +1153,6 @@ form?.addEventListener("submit", async (event) => {
   localStorage.setItem("photoConsentDraft", JSON.stringify(data));
 
   const consentHandle = await initConsentFolder();
-  let savedFilename = false;
   if (!consentHandle) {
     showStatus("Save folder not configured. Please choose a folder on setup.", true);
     window.location.href = "startup.html";
@@ -587,10 +1166,15 @@ form?.addEventListener("submit", async (event) => {
   }
 
   if (saveResult?.filename) {
-    showStatus(
-      `Saved ${saveResult.filename} in ${CONSENT_FOLDER_NAME}/${todayFolderName()}.`,
-    );
+    showStatus("Consent saved successfully.");
   }
+
+  try {
+    await updateSessionLogAfterConsent(consentHandle);
+  } catch (error) {
+    console.warn("Consent saved but session log update failed.", error);
+  }
+
   form.reset();
   setToday();
 });
@@ -598,10 +1182,22 @@ form?.addEventListener("submit", async (event) => {
 setToday();
 ensureLogo();
 syncSignature();
-initConsentFolder();
 redirectToStartupIfNeeded();
 updateContinueLink();
 toggleSubmitButton();
+
+if (isConsentPage()) {
+  initConsentFolder().then((consentHandle) => {
+    if (!consentHandle) {
+      return;
+    }
+    ensureSessionLogForLaunch(consentHandle).catch(() => {
+      showSessionStatus("Could not initialise session log.", true);
+    });
+  });
+}
+
+initDistributionPage();
 
 pickFolderButton?.addEventListener("click", async () => {
   await pickConsentFolder();
@@ -615,3 +1211,13 @@ form?.addEventListener("change", () => {
 form?.addEventListener("input", () => {
   toggleSubmitButton();
 });
+
+closeSessionButton?.addEventListener("click", async () => {
+  const shouldClose = window.confirm("Close this session now?");
+  if (!shouldClose) {
+    return;
+  }
+  await closeCurrentSession();
+});
+
+window.addEventListener("beforeunload", promptToCloseSessionOnExit);
