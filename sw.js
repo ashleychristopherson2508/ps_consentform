@@ -1,9 +1,10 @@
-const CACHE_NAME = "photo-consent-v19";
+const CACHE_NAME = "photo-consent-v21";
 const ASSETS = [
   "./",
   "index.html",
   "startup.html",
   "distribution.html",
+  "session-closed.html",
   "terms.html",
   "styles.css",
   "app.js",

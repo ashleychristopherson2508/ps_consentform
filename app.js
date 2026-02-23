@@ -343,14 +343,6 @@ const updateSessionLogAfterConsent = async (consentHandle) => {
   };
 };
 
-const promptToCloseSessionOnExit = (event) => {
-  if (!isSessionActive()) {
-    return;
-  }
-  event.preventDefault();
-  event.returnValue = "Do you want to close the current session before exiting?";
-};
-
 const closeCurrentSession = async () => {
   const consentHandle = await initConsentFolder();
   if (!consentHandle) {
@@ -386,6 +378,7 @@ const closeCurrentSession = async () => {
   await writeJsonToFile(sessionHandle, updated);
   markSessionActive(false);
   showSessionStatus("Session closed.");
+  window.location.href = "session-closed.html";
 };
 
 const distributionState = {
@@ -1219,5 +1212,3 @@ closeSessionButton?.addEventListener("click", async () => {
   }
   await closeCurrentSession();
 });
-
-window.addEventListener("beforeunload", promptToCloseSessionOnExit);
